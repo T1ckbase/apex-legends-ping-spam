@@ -12,12 +12,12 @@ pub fn main() !void {
 
     std.debug.print("Connecting to {s}:{d}...\n", .{ host, port });
 
-    var stream = try std.net.tcpConnectToHost(arena.allocator(), host, port);
-    defer stream.close();
+    var socket = try std.net.tcpConnectToHost(arena.allocator(), host, port);
+    defer socket.close();
 
     std.debug.print("Connected!\n", .{});
 
-    const writer = stream.writer();
+    var writer = socket.writer(&.{});
 
     // try writer.writeBytesNTimes("ping_specific_type WATCHING\n", 5000);
     // try writer.writeAll("+jump; -jump\n");
@@ -44,8 +44,8 @@ pub fn main() !void {
     while (true) {
         const write_loop = blk: {
             for (messages) |msg| {
-                _ = writer.write(msg) catch |err| break :blk err;
-                std.time.sleep(std.time.ns_per_ms * 1);
+                _ = writer.interface.write(msg) catch |err| break :blk err;
+                std.Thread.sleep(std.time.ns_per_ms * 1);
             }
         };
 
