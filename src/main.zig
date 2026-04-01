@@ -14,12 +14,10 @@ pub fn main() !void {
     }
     defer _ = timeEndPeriod(1);
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-
     std.log.info("Connecting to {s}:{d}...", .{ host, port });
 
-    var socket = try std.net.tcpConnectToHost(arena.allocator(), host, port);
+    const address = try std.net.Address.parseIp4(host, port);
+    var socket = try std.net.tcpConnectToAddress(address);
     defer socket.close();
 
     std.log.info("Connected!", .{});
