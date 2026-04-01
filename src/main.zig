@@ -1,36 +1,30 @@
-//! launch option
-//! -netconport 42069
-
 const std = @import("std");
+const windows = std.os.windows;
+
+extern "winmm" fn timeBeginPeriod(uPeriod: windows.UINT) callconv(.winapi) windows.UINT;
+extern "winmm" fn timeEndPeriod(uPeriod: windows.UINT) callconv(.winapi) windows.UINT;
+const TIMERR_NOERROR = 0;
 
 const host = "127.0.0.1";
 const port: u16 = 42069;
 
 pub fn main() !void {
+    if (timeBeginPeriod(1) != TIMERR_NOERROR) {
+        @panic("timeBeginPeriod failed!");
+    }
+    defer _ = timeEndPeriod(1);
+
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
-    std.debug.print("Connecting to {s}:{d}...\n", .{ host, port });
+    std.log.info("Connecting to {s}:{d}...", .{ host, port });
 
     var socket = try std.net.tcpConnectToHost(arena.allocator(), host, port);
     defer socket.close();
 
-    std.debug.print("Connected!\n", .{});
+    std.log.info("Connected!", .{});
 
     var writer = socket.writer(&.{});
-
-    // try writer.writeBytesNTimes("ping_specific_type WATCHING\n", 5000);
-    // try writer.writeAll("+jump; -jump\n");
-
-    // for (0..1000) |i| {
-    //     // std.debug.print("{}", .{i});
-    //     // var buffer: [64]u8 = undefined;
-    //     // const msg = try std.fmt.bufPrint(&buffer, "echo hello {}\n", .{i});
-    //     // try writer.writeAll(msg);
-    //     _ = i;
-    //     try writer.writeAll("ping_specific_type WATCHING\n");
-    //     std.time.sleep(std.time.ns_per_us * 100);
-    // }
 
     const messages = [_][]const u8{
         "ping_specific_type ENEMY\n",
@@ -42,16 +36,14 @@ pub fn main() !void {
     };
 
     while (true) {
-        const write_loop = blk: {
-            for (messages) |msg| {
-                _ = writer.interface.write(msg) catch |err| break :blk err;
-                std.Thread.sleep(std.time.ns_per_ms * 1);
-            }
-        };
-
-        write_loop catch |err| {
-            std.debug.print("Failed to write to socket. It's likely closed. Error: {any}\n", .{err});
-            return;
-        };
+        for (messages) |msg| {
+            _ = writer.interface.writeAll(msg) catch |err| {
+                const final_err = if (writer.err) |write_err| write_err else err;
+                std.log.err("Failed to write to socket. It's likely closed. Error: {any}", .{final_err});
+                return;
+            };
+            std.Thread.sleep(std.time.ns_per_ms * 1);
+            // std.Thread.sleep(std.time.ns_per_us * 500);
+        }
     }
 }
