@@ -1,0 +1,13 @@
+.{
+    .name = .apex_legends_ping_spam,
+    .version = "0.0.0",
+    .fingerprint = 0x6f35aeb9c775316d,
+    .minimum_zig_version = "0.16.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "LICENSE",
+        "README.md",
+    },
+}
