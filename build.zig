@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = std.builtin.OptimizeMode.ReleaseSafe;
+    const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode") orelse .ReleaseSafe;
 
     const exe_mod = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
