@@ -21,7 +21,7 @@ extern "kernel32" fn SetWaitableTimer(
 
 const host = "127.0.0.1";
 const port: u16 = 42069;
-const interval_ms: i32 = 12;
+const interval_ms: i32 = 14;
 
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
