@@ -1,8 +1,13 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode") orelse .ReleaseFast;
+    const target = b.standardTargetOptions(.{
+        .default_target = .{
+            .cpu_arch = .x86_64,
+            .os_tag = .windows,
+        },
+    });
+    const optimize = b.standardOptimizeOption(.{});
 
     const exe_mod = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
@@ -13,23 +18,23 @@ pub fn build(b: *std.Build) void {
     });
 
     const exe = b.addExecutable(.{
-        .name = "hello_world",
+        .name = "a",
         .root_module = exe_mod,
     });
-    b.installArtifact(exe);
+    b.getInstallStep().dependOn(&b.addInstallArtifact(exe, .{
+        .dest_dir = .{ .override = .prefix },
+    }).step);
 
     const exe_check = b.addExecutable(.{
-        .name = "foo",
+        .name = "check",
         .root_module = exe_mod,
     });
 
-    const check = b.step("check", "Check if foo compiles");
+    const check = b.step("check", "Check if code compiles");
     check.dependOn(&exe_check.step);
 
     const run_cmd = b.addRunArtifact(exe);
-
     run_cmd.step.dependOn(b.getInstallStep());
-
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
