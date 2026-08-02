@@ -5,7 +5,7 @@ const Sleeper = @import("Sleeper.zig");
 const host = "127.0.0.1";
 const port: u16 = 42069;
 
-const sleep_ms = 14;
+const interval_ms = 14;
 
 const commands = [_][]const u8{
     "ping_specific_type ENEMY\n",
@@ -22,15 +22,13 @@ pub fn main(init: std.process.Init) !void {
     std.log.info("Connecting to {s}:{d}...", .{ host, port });
 
     const address = std.Io.net.IpAddress.parseIp4(host, port) catch |err| {
-        std.log.err("Failed to parse IP address: {}", .{err});
-        return err;
+        std.process.fatal("Failed to parse IP address: {}", .{err});
     };
     var stream = address.connect(io, .{
         .mode = .stream,
         .protocol = .tcp,
     }) catch |err| {
-        std.log.err("Failed to connect to host: {}", .{err});
-        return err;
+        std.process.fatal("Failed to connect to host: {}", .{err});
     };
     defer stream.close(io);
     var stream_writer = stream.writer(io, &.{});
@@ -44,11 +42,10 @@ pub fn main(init: std.process.Init) !void {
         for (commands) |command| {
             stream_writer.interface.writeAll(command) catch |err| {
                 const final_err = stream_writer.err orelse err;
-                std.log.err("Failed to write to stream. Connection lost? Error: {}", .{final_err});
-                return;
+                std.process.fatal("Failed to write to stream. Connection lost? Error: {}", .{final_err});
             };
 
-            try sleeper.sleep(.fromMilliseconds(sleep_ms));
+            try sleeper.sleep(.fromMilliseconds(interval_ms));
         }
     }
 }

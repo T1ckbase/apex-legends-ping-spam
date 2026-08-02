@@ -9,7 +9,7 @@ extern "kernel32" fn CreateWaitableTimerExW(
 ) callconv(.winapi) ?windows.HANDLE;
 
 extern "kernel32" fn SetWaitableTimerEx(
-    hTimer: ?windows.HANDLE,
+    hTimer: windows.HANDLE,
     lpDueTime: ?*const windows.LARGE_INTEGER,
     lPeriod: windows.LONG,
     pfnCompletionRoutine: ?*const fn (?windows.LPVOID, windows.DWORD, windows.DWORD) callconv(.winapi) void,
@@ -19,7 +19,6 @@ extern "kernel32" fn SetWaitableTimerEx(
 ) callconv(.winapi) windows.BOOL;
 
 const CREATE_WAITABLE_TIMER_HIGH_RESOLUTION = 0x00000002;
-const TIMER_ALL_ACCESS = windows.ACCESS_MASK.Specific.Timer.ALL_ACCESS;
 
 const Sleeper = @This();
 
@@ -31,7 +30,7 @@ pub fn init() !Sleeper {
             null,
             null,
             CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
-            TIMER_ALL_ACCESS,
+            windows.ACCESS_MASK.Specific.Timer.ALL_ACCESS,
         ) orelse return windows.unexpectedError(windows.GetLastError()),
     };
 }
@@ -41,18 +40,16 @@ pub fn deinit(self: Sleeper) void {
 }
 
 pub fn sleep(self: Sleeper, duration: std.Io.Duration) !void {
-    std.debug.assert(duration.toMilliseconds() <= std.math.maxInt(i32));
-
     if (duration.nanoseconds < 1) return;
 
     const due_time: windows.LARGE_INTEGER = @intCast(-@divTrunc(duration.nanoseconds, 100));
-    if (SetWaitableTimerEx(self.hTimer, &due_time, 0, null, null, null, 0) == .FALSE) {
+    if (!SetWaitableTimerEx(self.hTimer, &due_time, 0, null, null, null, 0).toBool()) {
         return windows.unexpectedError(windows.GetLastError());
     }
 
     const infinite_timeout: windows.LARGE_INTEGER = std.math.minInt(windows.LARGE_INTEGER);
     switch (windows.ntdll.NtWaitForSingleObject(self.hTimer, .FALSE, &infinite_timeout)) {
-        windows.NTSTATUS.WAIT_0 => {},
+        .WAIT_0 => {},
         else => |status| return windows.unexpectedStatus(status),
     }
 }
