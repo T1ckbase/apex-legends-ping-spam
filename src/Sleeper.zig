@@ -10,7 +10,7 @@ extern "kernel32" fn CreateWaitableTimerExW(
 
 extern "kernel32" fn SetWaitableTimerEx(
     hTimer: windows.HANDLE,
-    lpDueTime: ?*const windows.LARGE_INTEGER,
+    lpDueTime: *const windows.LARGE_INTEGER,
     lPeriod: windows.LONG,
     pfnCompletionRoutine: ?*const fn (?windows.LPVOID, windows.DWORD, windows.DWORD) callconv(.winapi) void,
     lpArgToCompletionRoutine: ?windows.LPVOID,
