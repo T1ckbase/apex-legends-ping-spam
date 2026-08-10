@@ -5,14 +5,19 @@ const Sleeper = @import("Sleeper.zig");
 const host = "127.0.0.1";
 const port: u16 = 42069;
 
-const interval_ms = 14;
+const interval: std.Io.Duration = .fromMilliseconds(5);
 
 const commands = [_][]const u8{
     "ping_specific_type ENEMY\n",
+    "ping_specific_type AVOID\n",
+    "ping_specific_type ENEMY_AUDIO\n",
     "ping_specific_type LOOTING\n",
-    "ping_specific_type GOING\n",
+    "ping_specific_type ATTACK\n",
+    "ping_specific_type REGROUP\n",
     "ping_specific_type DEFENDING\n",
     "ping_specific_type WATCHING\n",
+    "ping_specific_type AREA_VISITED\n",
+    "ping_specific_type GOING\n",
     "+ping; -ping\n",
 };
 
@@ -45,7 +50,7 @@ pub fn main(init: std.process.Init) !void {
                 std.process.fatal("Failed to write to stream. Connection lost? Error: {}", .{final_err});
             };
 
-            try sleeper.sleep(.fromMilliseconds(interval_ms));
+            try sleeper.sleep(interval);
         }
     }
 }
